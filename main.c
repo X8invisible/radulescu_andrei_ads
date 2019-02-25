@@ -17,7 +17,64 @@ struct Player
     int score;
 };
 
+void appendMove(struct History **list, int slot, char sign)
+{
+    struct History *temp, *current = *list;
+    if(*list == NULL)
+    {
+        *list = (struct History*)malloc(sizeof(struct History));
+        (*list)->prev = NULL;
+        (*list)->slotChanged = slot;
+        (*list)->sign = sign;
+        (*list)->next = NULL;
+    }else
+    {
+        while(current->next !=NULL)
+            current = current->next;
+        temp = (struct History*) malloc(sizeof(struct History));
+        temp->sign = sign;
+        temp->slotChanged = slot;
+        temp->next = NULL;
+        temp->prev = current;
+        current->next = temp;
+    }
+    
+}
+void freeMoves(struct History **list)
+{
+    struct History *temp, *current = *list;
+    while(current->next !=NULL)
+    {
+        temp = current;
+        current = current->next;
+        temp->prev = NULL;
+        temp->next = NULL;
+        current->prev=NULL;
+        free(temp);
+    }
+    free(current);
+    *list = NULL;
+}
+void deleteAfter(struct History **list)
+{
+    struct History *temp, *current = *list;
+    if(current->next != NULL)
+    {
+        temp = current->next;
+        current->next = NULL;
+        freeMoves(&temp);
+    }
+    
+}
 
+void displayHistory(struct History *list)
+{
+    while(list != NULL)
+    {
+        printf("%c was played at location %d \n", list->sign, list->slotChanged+1);
+        list = list->next;
+    }
+}
 void printScore(struct Player one, struct Player two)
 {
     printf("\n\nScore x (%s): %d | Score y (%s): %d\n",one.name,one.score,two.name,two.score);
@@ -64,11 +121,11 @@ char CheckBoard(char *board)
 void Change(char *board, struct History *h)
 {
     int index = h->slotChanged;
-    char sign = h->sign;
+    //char sign = h->sign;
 
     board[index] = (index+1)+'0';
 }
-void Move(char *board, struct Player p)
+void Move(char *board, struct Player p, struct History **h)
 {
     char player = p.sign;
     int index =10;
@@ -84,6 +141,7 @@ void Move(char *board, struct Player p)
             {
                 board[index -1] = player;
                 correct = 1;
+                appendMove(h, index-1,player);
             }
             else
             {
@@ -99,17 +157,19 @@ void Move(char *board, struct Player p)
     } while (correct == 0);
 }
 
-void resetGame(char *board)
+void resetGame(char *board, struct History **h)
 {
     for(int i = 0; i < SIZEOFBD; i++)
     {
         board[i] = (i+1) + '0';
     }
-    
+    freeMoves(h);
 }
 int main()
 {
     struct Player one, two;
+    struct History *h;
+    h = NULL;
     one.sign = 'x';
     one.score = 0;
     two.sign = '0';
@@ -133,7 +193,8 @@ int main()
         }
         printScore(one,two);
         printBoard(board);
-        Move(&*board, p);
+        Move(&*board, p, &h);
+        displayHistory(h);
         winner = CheckBoard(&*board);
         if(winner == 'x')
         {
@@ -149,10 +210,11 @@ int main()
             scanf(" %c", &choice);
             if(choice == 'y')
             {
-                resetGame(&*board);
+                resetGame(&*board,&h);
             }
             else
             {
+                printf("Bye\n");
                 gameOver =1;
             }
             
