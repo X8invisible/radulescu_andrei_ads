@@ -31,6 +31,21 @@ void appendMove(struct History **list, int slot, char sign)
     }
     
 }
+void appendNode(struct History **list, struct History **node)
+{
+    struct History *current = *list;
+    if(*list == NULL)
+    {
+        *list = *node;
+    }else
+    {
+        while(current->next != NULL)
+            current=current->next;
+        current->next = *node;
+        (*node)->prev = current;
+    }
+
+}
 void freeMoves(struct History **list)
 {
     struct History *temp, *current = *list;
@@ -46,39 +61,80 @@ void freeMoves(struct History **list)
     free(current);
     *list = NULL;
 }
-void deleteAfter(struct History **list)
+
+struct History* popMove(struct History **list)
 {
-    struct History *temp, *current = *list;
-    if(current->next != NULL)
+    struct History *current = *list;
+    if(*list != NULL)
     {
-        temp = current->next;
-        current->next = NULL;
-        freeMoves(&temp);
+        while(current->next != NULL)
+            current = current->next;
+        if(current->prev == NULL)
+        {
+            *list = NULL;
+            return current;
+        }else
+        {
+            current->prev->next = NULL;
+            current->prev = NULL;
+
+            return current;
+        }
+        
+    }else
+    {
+        printf("List is empty\n");
+        return NULL;
     }
+    
+}
+void UndoMove(struct History **list, struct History **undoMoveList)
+{
+
+    struct History *removedMove = popMove(list);
+    if(removedMove != NULL)
+        appendNode(&(*undoMoveList), &removedMove);
+    
     
 }
 
 void displayHistory(struct History *list)
 {
+    if(list == NULL)
+    {
+        printf("empty\n");
+    }
     while(list != NULL)
     {
         printf("%c was played at location %d \n", list->sign, list->slotChanged+1);
         list = list->next;
     }
+    
+    
 }
-
 
 int main()
 {
     struct History *list;
     list = NULL;
-    displayHistory(list);
+    struct History *undo;
+    undo = NULL;
     appendMove(&list,1,'a');
     appendMove(&list,3,'f');
     appendMove(&list,5,'j');
     displayHistory(list);
-    //printf("%c", list->next->sign);
-    freeMoves(&list);
-    appendMove(&list,1,'a');
+    UndoMove(&list, &undo);
+    UndoMove(&list, &undo);
+    UndoMove(&list, &undo);
+    printf("\n");
     displayHistory(list);
+    displayHistory(undo);
+    UndoMove(&undo, &list);
+    printf("l\n");
+    displayHistory(list);
+     printf("und\n");
+    displayHistory(undo);
+
+    //appendMove(&list,1,'a');
+    //displayHistory(list);
 }
