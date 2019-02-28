@@ -136,7 +136,7 @@ void displayHistory(struct History *list)
 }
 void printScore(struct Player one, struct Player two)
 {
-    printf("\n\nScore x (%s): %d | Score y (%s): %d\n",one.name,one.score,two.name,two.score);
+    printf("\n\nScore X (%s): %d | Score O (%s): %d\n\n",one.name,one.score,two.name,two.score);
 }
 void printBoard(char *board)
 {
@@ -204,12 +204,16 @@ void UndoMove(char *board, struct History **list, struct History **undoMoveList,
 int Move(char *board, struct Player p, struct History **h)
 {
     char player = p.sign;
+	char ch[10];
+	char *ptr;
     int index =10;
     int correct = 0;
     do
     {
         printf("Enter a square (99 for undo, 0 for redo): ");
-        scanf("%d", &index);
+        //scanf("%d", &index);
+		fgets(ch,10,stdin);
+		index = strtol(ch,&ptr,10);
         if(index<10 && index>0)
         {
             char c = index + '0';
@@ -226,7 +230,7 @@ int Move(char *board, struct Player p, struct History **h)
             
         }else
         {
-            if(index == 99 || index == 0)
+            if(index == 99 || index == 11)
             {
                 return index;
             }else
@@ -252,14 +256,16 @@ int main()
     struct History *h, *undoList;
     h = NULL;
     undoList = NULL;
-    one.sign = 'x';
+    one.sign = 'X';
     one.score = 0;
-    two.sign = '0';
+    two.sign = 'O';
     two.score = 0;
     printf("Player one name: ");
-    scanf("%s", one.name);
+	fgets(one.name,256,stdin);
+	one.name[strcspn(one.name,"\n")] =0;
     printf("Player two name: ");
-    scanf("%s", two.name);
+    fgets(two.name,256,stdin);
+	two.name[strcspn(two.name,"\n")] =0;
     int gameOver = 0, undo =-1;
     char winner;
     char board[SIZEOFBD] = "123456789";
