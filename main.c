@@ -4,6 +4,7 @@
 
 #define SIZEOFBD 9
 
+int turn =0;
 struct History
 {
     int slotChanged;
@@ -40,20 +41,78 @@ void appendMove(struct History **list, int slot, char sign)
     }
     
 }
+void appendNode(struct History **list, struct History **node)
+{
+    struct History *current = *list;
+    if(*list == NULL)
+    {
+        *list = *node;
+    }else
+    {
+        while(current->next != NULL)
+            current=current->next;
+        current->next = *node;
+        (*node)->prev = current;
+    }
+
+}
+struct History* popMove(struct History **list)
+{
+    struct History *current = *list;
+    if(*list != NULL)
+    {
+        while(current->next != NULL)
+            current = current->next;
+        if(current->prev == NULL)
+        {
+            *list = NULL;
+            return current;
+        }else
+        {
+            current->prev->next = NULL;
+            current->prev = NULL;
+
+            return current;
+        }
+        
+    }else
+    {
+        printf("List is empty\n");
+        return NULL;
+    }
+    
+}
+struct History* lastOf(struct History **list)
+{
+    struct History *current = *list;
+    if(*list != NULL)
+    {
+        while(current->next != NULL)
+            current = current->next;
+        return current;
+    }else
+    {
+        printf("List is empty\n");
+        return NULL;
+    }
+}
 void freeMoves(struct History **list)
 {
     struct History *temp, *current = *list;
-    while(current->next !=NULL)
+    if(* list !=NULL)
     {
-        temp = current;
-        current = current->next;
-        temp->prev = NULL;
-        temp->next = NULL;
-        current->prev=NULL;
-        free(temp);
+        while(current->next !=NULL)
+        {
+            temp = current;
+            current = current->next;
+            temp->prev = NULL;
+            temp->next = NULL;
+            current->prev=NULL;
+            free(temp);
+        }
+        free(current);
+        *list = NULL;
     }
-    free(current);
-    *list = NULL;
 }
 void deleteAfter(struct History **list)
 {
@@ -118,21 +177,38 @@ char CheckBoard(char *board)
     return 'n';
 }
 
-void Change(char *board, struct History *h)
+void Change(char *board, struct History *h, int way)
 {
     int index = h->slotChanged;
-    //char sign = h->sign;
-
-    board[index] = (index+1)+'0';
+    char sign = h->sign;
+    if(way == 0)
+        board[index] = (index+1)+'0';
+    else
+        board[index] = sign;
+    
 }
-void Move(char *board, struct Player p, struct History **h)
+void UndoMove(char *board, struct History **list, struct History **undoMoveList, int way)
+{
+
+    struct History *removedMove = popMove(list);
+    if(removedMove != NULL)
+    {
+        Change(board, removedMove, way);
+        appendNode(&(*undoMoveList), &removedMove);
+    }
+    if(*list == NULL && way == 0)
+        for(int i = 0; i < SIZEOFBD; i++)
+            board[i] = (i+1) + '0';
+    turn -= 2;
+}
+int Move(char *board, struct Player p, struct History **h)
 {
     char player = p.sign;
     int index =10;
     int correct = 0;
     do
     {
-        printf("Enter a square: ");
+        printf("Enter a square (99 for undo, 0 for redo): ");
         scanf("%d", &index);
         if(index<10 && index>0)
         {
@@ -150,11 +226,16 @@ void Move(char *board, struct Player p, struct History **h)
             
         }else
         {
-            printf("Wrong move\n");
+            if(index == 99 || index == 0)
+            {
+                return index;
+            }else
+                printf("Wrong move\n");
         }
         
         
     } while (correct == 0);
+    return 1;
 }
 
 void resetGame(char *board, struct History **h)
@@ -168,8 +249,9 @@ void resetGame(char *board, struct History **h)
 int main()
 {
     struct Player one, two;
-    struct History *h;
+    struct History *h, *undoList;
     h = NULL;
+    undoList = NULL;
     one.sign = 'x';
     one.score = 0;
     two.sign = '0';
@@ -178,7 +260,7 @@ int main()
     scanf("%s", one.name);
     printf("Player two name: ");
     scanf("%s", two.name);
-    int turn =0, gameOver = 0;
+    int gameOver = 0, undo =-1;
     char winner;
     char board[SIZEOFBD] = "123456789";
     while(gameOver == 0)
@@ -193,7 +275,19 @@ int main()
         }
         printScore(one,two);
         printBoard(board);
-        Move(&*board, p, &h);
+        undo = Move(&*board, p, &h);
+        if(undo == 99)
+        {   
+            UndoMove(&*board,&h, &undoList,0);
+            //Change(&*board, lastOf(&undoList),0);
+        }
+        if(undo == 0)
+        {
+            UndoMove(&*board,&undoList, &h,1);
+            //Change(&*board, lastOf(&h),1);
+        }
+        if(undo == 1)
+            freeMoves(&undoList);
         displayHistory(h);
         winner = CheckBoard(&*board);
         if(winner == 'x')
