@@ -123,9 +123,9 @@ void displayHistory(struct History *list)
         list = list->next;
     }
 }
-void printScore(struct Player one, struct Player two)
+void printScore(struct Player *one, struct Player *two)
 {
-    printf("\n\n\n\n\n\nScore X (%s): %d | Score O (%s): %d\n\n",one.name,one.score,two.name,two.score);
+    printf("\n\n\n\n\n\nScore X (%s): %d | Score O (%s): %d\n\n", one->name, one->score, two->name, two->score);
 }
 void printBoard(char *board)
 {
@@ -242,26 +242,28 @@ void resetGame(char *board, struct History **h)
 }
 int main()
 {
-    struct Player one, two;
+    //struct Player one, two;
+    struct Player *one = malloc(sizeof(struct Player));
+    struct Player *two = malloc(sizeof(struct Player));
     struct History *h, *undoList;
     h = NULL;
     undoList = NULL;
-    one.sign = 'X';
-    one.score = 0;
-    two.sign = 'O';
-    two.score = 0;
+    one->sign = 'X';
+    one->score = 3;
+    two->sign = 'O';
+    two->score = 3;
     printf("Player one name: ");
-	fgets(one.name,256,stdin);
-	one.name[strcspn(one.name,"\n")] =0;
+	fgets(one->name,256,stdin);
+	one->name[strcspn(one->name,"\n")] =0;
     printf("Player two name: ");
-    fgets(two.name,256,stdin);
-	two.name[strcspn(two.name,"\n")] =0;
+    fgets(two->name,256,stdin);
+	two->name[strcspn(two->name,"\n")] =0;
     int gameOver = 0, undo =-1;
     char winner;
     char board[SIZEOFBD] = "123456789";
     while(gameOver == 0)
     {
-        struct Player p;
+        struct Player *p;
         if(turn % 2 == 0)
         {
             p = one;
@@ -271,7 +273,7 @@ int main()
         }
         printScore(one,two);
         printBoard(board);
-        undo = Move(&*board, p, &h);
+        undo = Move(&*board, *p, &h);
         if(undo == 99)
         {   
             UndoMove(&*board,&h, &undoList,0);
@@ -286,10 +288,10 @@ int main()
         winner = CheckBoard(&*board);
         if(winner == 'x')
         {
-            one.score++;
+            //one.score++;
         }
         if (winner =='0') {
-            two.score++;
+           // two.score++;
         }
         if(winner != 'n')
         {
