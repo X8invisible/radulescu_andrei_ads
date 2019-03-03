@@ -7,6 +7,7 @@
 int turn =0;
 struct History
 {
+    int bigBoard;
     int slotChanged;
     char sign;
     struct History *next, *prev;
@@ -18,13 +19,61 @@ struct Player
     int score;
 };
 
-void appendMove(struct History **list, int slot, char sign)
+struct Board
+{
+    char board[SIZEOFBD];
+    char won;
+};
+void setBigBoard(struct Board **bigBoard)
+{
+    if(*bigBoard == NULL)
+        *bigBoard = (struct Board*) malloc(sizeof(struct Board)*SIZEOFBD);
+    for(int i = 0; i < SIZEOFBD; i++)
+    {
+        bigBoard[i] = (struct Board*) malloc(sizeof(struct Board));
+        for(int j = 0; j < SIZEOFBD; j++)
+        {
+            bigBoard[i]->board[j] = j+1 +'0';
+        }
+        bigBoard[i]->won = 'f';
+    }
+    
+}
+
+void displayBigBoard(struct Board **bigBoard)
+{
+     printf("\n\n");
+    int i =0, row =0;
+    while(i < SIZEOFBD)
+    {
+        for(int j = i; j < i+3; j++)
+        {
+            if(bigBoard[j]->won == 'f')
+                printf("||  %c  |  %c  |  %c  |", bigBoard[j]->board[row*3], bigBoard[j]->board[row*3+1], bigBoard[j]->board[row*3+2]);
+            else
+                printf("||  %c  |  %c  |  %c  |", bigBoard[j]->won, bigBoard[j]->won, bigBoard[j]->won);
+            
+        }
+        printf("|\n\n");
+        row++;
+        if(row == 3)
+        {
+            row =0;
+            i +=3;
+            printf("___________________________________________________________________\n\n");
+        }
+        
+    }
+    
+}
+void appendMove(struct History **list,int bigBoardSlot, int slot, char sign)
 {
     struct History *temp, *current = *list;
     if(*list == NULL)
     {
         *list = (struct History*)malloc(sizeof(struct History));
         (*list)->prev = NULL;
+        (*list)->bigBoard = bigBoardSlot;
         (*list)->slotChanged = slot;
         (*list)->sign = sign;
         (*list)->next = NULL;
@@ -34,6 +83,7 @@ void appendMove(struct History **list, int slot, char sign)
             current = current->next;
         temp = (struct History*) malloc(sizeof(struct History));
         temp->sign = sign;
+        temp->bigBoard = bigBoardSlot;
         temp->slotChanged = slot;
         temp->next = NULL;
         temp->prev = current;
@@ -114,12 +164,23 @@ void freeMoves(struct History **list)
         *list = NULL;
     }
 }
+void deleteAfter(struct History **list)
+{
+    struct History *temp, *current = *list;
+    if(current->next != NULL)
+    {
+        temp = current->next;
+        current->next = NULL;
+        freeMoves(&temp);
+    }
+    
+}
 
 void displayHistory(struct History *list)
 {
     while(list != NULL)
     {
-        printf("%c was played at location %d \n", list->sign, list->slotChanged+1);
+        printf("%c was played at location %d in the table at %d \n", list->sign, list->slotChanged+1, list->bigBoard+1);
         list = list->next;
     }
 }
@@ -127,41 +188,29 @@ void printScore(struct Player one, struct Player two)
 {
     printf("\n\n\n\n\n\nScore X (%s): %d | Score O (%s): %d\n\n",one.name,one.score,two.name,two.score);
 }
-void printBoard(char *board)
-{
-    for(int i = 0; i < SIZEOFBD; i++)
-    {
-        printf(" %c ", board[i]);
-        if (( i + 1 ) % 3 == 0) {
-           printf("\n-------------\n");
-        }else
-            printf("|");
-        
-    }
-    
-}
-char CheckBoard(char *board)
+
+char CheckBoard(struct Board **bigBoard)
 {
     int index =0;
     for(int x = 0; x < 3; x++)
     {
         //horizontal check
-        if ((board[index] == board[index + 1]) && (board[index + 1] == board[index +2])) {
-            printf("%c wins\n", board[index]);
-            return board[index];
+        if ((bigBoard[index]->won == bigBoard[index + 1]->won) && (bigBoard[index + 1]->won == bigBoard[index +2]->won) && (bigBoard[index]->won != 'f')) {
+            printf("%c wins\n", bigBoard[index]->won);
+            return bigBoard[index]->won;
         }
         //vertical check
-        if((board[x] == board[x+3]) && (board[x+6]== board[x+3]))
+        if((bigBoard[x]->won == bigBoard[x+3]->won) && (bigBoard[x+6]->won== bigBoard[x+3]->won) && (bigBoard[x]->won != 'f'))
         {
-             printf("%c wins\n", board[x]);
-             return board[x];
+             printf("%c wins\n", bigBoard[x]->won);
+             return bigBoard[x]->won;
         }
         index += 3;
     }
-    if(((board[0] == board[4]) && (board[8] == board[4])) || ((board[2] == board[4]) && (board[6] == board[4])))
+    if((((bigBoard[0]->won == bigBoard[4]->won) && (bigBoard[8]->won == bigBoard[4]->won)) || ((bigBoard[2]->won == bigBoard[4]->won) && (bigBoard[6]->won == bigBoard[4]->won))) && (bigBoard[4]->won != 'f'))
     {
-         printf("%c wins\n", board[4]);
-             return board[4];
+         printf("%c wins\n", bigBoard[4]->won);
+             return bigBoard[4]->won;
     }
     return 'n';
 }
@@ -191,7 +240,7 @@ void UndoMove(char *board, struct History **list, struct History **undoMoveList,
         for(int i = 0; i < SIZEOFBD; i++)
             board[i] = (i+1) + '0';
 }
-int Move(char *board, struct Player p, struct History **h)
+/*int Move(char *board, struct Player p, struct History **h)
 {
     char player = p.sign;
 	char ch[10];
@@ -231,7 +280,7 @@ int Move(char *board, struct Player p, struct History **h)
     } while (correct == 0);
     return 1;
 }
-
+*/
 void resetGame(char *board, struct History **h)
 {
     for(int i = 0; i < SIZEOFBD; i++)
@@ -243,9 +292,13 @@ void resetGame(char *board, struct History **h)
 int main()
 {
     struct Player one, two;
-    struct History *h, *undoList;
-    h = NULL;
-    undoList = NULL;
+    //struct History *h, *undoList;
+    //h = NULL;
+    //undoList = NULL;
+    int gameOver = 0; //undo =-1;
+    //char winner;
+    struct Board *bigBoard;
+    bigBoard = NULL;
     one.sign = 'X';
     one.score = 0;
     two.sign = 'O';
@@ -256,64 +309,12 @@ int main()
     printf("Player two name: ");
     fgets(two.name,256,stdin);
 	two.name[strcspn(two.name,"\n")] =0;
-    int gameOver = 0, undo =-1;
-    char winner;
-    char board[SIZEOFBD] = "123456789";
-    while(gameOver == 0)
-    {
-        struct Player p;
-        if(turn % 2 == 0)
-        {
-            p = one;
-        }else
-        {
-            p = two;
-        }
-        printScore(one,two);
-        printBoard(board);
-        undo = Move(&*board, p, &h);
-        if(undo == 99)
-        {   
-            UndoMove(&*board,&h, &undoList,0);
-        }
-        if(undo == 11)
-        {
-            UndoMove(&*board,&undoList, &h,1);
-        }
-        if(undo == 1)
-            freeMoves(&undoList);
-        displayHistory(h);
-        winner = CheckBoard(&*board);
-        if(winner == 'x')
-        {
-            one.score++;
-        }
-        if (winner =='0') {
-            two.score++;
-        }
-        if(winner != 'n')
-        {
-            printf("Play another?(y/n): ");
-            char choice;
-            scanf(" %c", &choice);
-            if(choice == 'y')
-            {
-                resetGame(&*board,&h);
-            }
-            else
-            {
-                printf("Bye\n");
-                gameOver =1;
-            }
-            
-            
-            
-        }
-        
-        turn += 1;
-    }
     
-    
-
+    setBigBoard(&bigBoard);
+    (&bigBoard)[6]->won ='X';
+    (&bigBoard)[7]->won ='O';
+    (&bigBoard)[8]->won ='X';
+    displayBigBoard(&bigBoard);
+    CheckBoard(&bigBoard);
     return 0;
 }
