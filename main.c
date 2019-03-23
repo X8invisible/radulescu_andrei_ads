@@ -264,18 +264,9 @@ void UndoMove(struct Board **bigBoard, struct History **listFrom , struct Histor
     {
         Change(bigBoard, removedMove, way);
         appendNode(listTo, &removedMove);
-        //if undo/redo is succesful, player needs to be changed(-2 because the turn is incremented by 1 in the main function after regardless)
-        turn -= 2;
     }else
-        //if undo/redo is unsuccesful, player needs to be the same(-1 because of same reason)
+        //if undo/redo is unsuccesful, turn doesn't change
         turn -= 1;
-    
-    //if you want to undo 
-    /*if(*listFrom == NULL && way == 0)
-        for(int i = 0; i < SIZEOFBD; i++)
-            for(int j = 0; j < SIZEOFBD; j++)
-                bigBoard[i]->board[j] = (j+1) + '0';
-                */
             
 }
 //used for adding moves to the board
@@ -391,7 +382,7 @@ int main()
     h = NULL;
     undoList = NULL;
     int gameOver = 0, undo = -1, moves = 0;
-    char winner;
+    char winner, choice;
     //allocates memory for the big board
     struct Board **bigBoard = malloc(sizeof(struct Board*) * SIZEOFBD);
     //sets up the players
@@ -442,13 +433,12 @@ int main()
         if (winner =='O')
             two.score++;
 
-        if(moves ==0)
+        if(moves ==0 || undo == 55)
             winner = 't';
 
         if(winner != 'n')
         {
             printf("Play another?(y/n): ");
-            char choice;
             scanf(" %c", &choice);
             if(choice == 'y')
             {
